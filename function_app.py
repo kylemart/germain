@@ -3,6 +3,7 @@ import logging
 import azure.functions as func
 import requests
 from icalendar import Calendar
+from icalendar.timezone.windows_to_olson import WINDOWS_TO_OLSON
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
@@ -40,8 +41,30 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
             status_code=400
         )
 
-    calendar.add_missing_timezones()
+    missing_tzids: list[str] | None = None
+    try: 
+        missing_tzids = calendar.get_missing_tzids()
+    except ValueError as e:
+        logging.error(f"Failed to get missing TZIDs: {e}")
+        return func.HttpResponse(
+            f"Invalid calendar data at '{url}'.",
+            status_code=400
+        )
     
+    if not missing_tzids:
+        return func.HttpResponse(
+            calendar.to_ical(), 
+            mimetype='text/calendar'
+        )
+
+    for event in calendar.events:
+        for dt_key in ['DTSTART', 'DTEND']:
+            dt = event.get(dt_key)
+            tzid = dt.params.get('TZID')
+            if tzid in missing_tzids:
+                logging.info(f"Patching TZID for event '{event.uid}'.")
+                dt.params['TZID'] = WINDOWS_TO_OLSON.get(tzid)
+
     return func.HttpResponse(
         calendar.to_ical(), 
         mimetype='text/calendar'
