@@ -40,7 +40,7 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
             status_code=400
         )
 
-    calendar.add_missing_timezones()
+    # calendar.add_missing_timezones()
     return func.HttpResponse(
         calendar.to_ical(), 
         mimetype='text/calendar'
