@@ -63,7 +63,7 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
             dt = event.get(dt_key)
             tzid = dt.params.get('TZID')
             if tzid in missing_tzids:
-                dt.params['TZID'] = WINDOWS_TO_OLSON.get(tzid)
+                dt.params['TZID'] = WINDOWS_TO_OLSON.get(tzid, tzid)
                 patched = True
         if patched:
             logging.info(f"Patched TZIDs for event '{event.uid}'.")
