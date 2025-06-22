@@ -38,7 +38,7 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
         )
     
     if not calendar:
-        logging.info("No calendar data.")
+        logging.info("No calendar data found.")
         return func.HttpResponse(
             "No calendar data found.",
             status_code=400
