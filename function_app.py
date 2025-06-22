@@ -13,6 +13,7 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
 
     url = req.params.get('ics_url')
     if not url:
+        logging.info("Missing 'ics_url' parameter.")
         return func.HttpResponse(
             "Missing 'ics_url' parameter in the query string.",
             status_code=400
@@ -20,8 +21,9 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
 
     url_response = requests.get(url)
     if not url_response.ok:
+        logging.info(f"Failed to fetch the calendar.")
         return func.HttpResponse(
-            f"Failed to fetch the calendar from '{url}'.",
+            f"Failed to fetch the calendar at '{url}'.",
             status_code=url_response.status_code
         )
     
@@ -29,13 +31,14 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
     try: 
         calendar = Calendar.from_ical(url_response.content)
     except ValueError as e:
-        logging.error(f"Failed to parse the calendar: {e}")
+        logging.info(f"Failed to parse the calendar: {e}")
         return func.HttpResponse(
             f"Invalid calendar data at '{url}'.",
             status_code=400
         )
     
     if not calendar:
+        logging.info("No calendar data.")
         return func.HttpResponse(
             "No calendar data found.",
             status_code=400
@@ -45,13 +48,14 @@ def patch(req: func.HttpRequest) -> func.HttpResponse:
     try: 
         missing_tzids = calendar.get_missing_tzids()
     except ValueError as e:
-        logging.error(f"Failed to get missing TZIDs: {e}")
+        logging.info(f"Failed to get missing TZIDs: {e}")
         return func.HttpResponse(
             f"Invalid calendar data at '{url}'.",
             status_code=400
         )
     
     if not missing_tzids:
+        logging.info("No missing TZIDs found.")
         return func.HttpResponse(
             calendar.to_ical(), 
             mimetype='text/calendar'
